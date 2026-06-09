@@ -2,6 +2,8 @@
 
 A collection of AI-powered applications built with Python, Claude (Anthropic), and modern LLM tooling.
 
+**Live API:** [https://web-production-eb10d.up.railway.app](https://web-production-eb10d.up.railway.app) | [API Docs](https://web-production-eb10d.up.railway.app/docs)
+
 ---
 
 ## Projects
