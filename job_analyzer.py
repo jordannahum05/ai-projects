@@ -30,28 +30,34 @@ Format it clearly with headers."""
     )
     return response.content[0].text
 
+BACKGROUND = """
+I am self-taught with focused AI engineering practice over the past few weeks.
+
+Skills: Python, REST APIs, RAG (Retrieval-Augmented Generation), vector databases, embeddings, AI agents with tool use, FastAPI, SQL, prompt engineering, Claude Code.
+
+Built and deployed:
+- A live AI API using FastAPI + Claude + SQLite, deployed on Railway
+- A Document Q&A system using ChromaDB and semantic search
+- An AI agent with autonomous tool calling
+- A Job Application Analyzer using Claude
+- A Streamlit web app with file upload and real-time AI responses
+
+I use Claude Code daily to build and ship projects. I can demo live working projects and explain how every part works.
+
+GitHub: github.com/jordannahum05/ai-projects
+Live API: web-production-eb10d.up.railway.app
+"""
+
 print("=" * 50)
 print("     Job Application Analyzer")
 print("=" * 50)
 
-print("\nPaste the job description (press Enter twice when done):")
-lines = []
-while True:
-    line = input()
-    if line == "" and lines and lines[-1] == "":
-        break
-    lines.append(line)
-job_description = "\n".join(lines[:-1])
+print("\nPaste job description into job.txt and press Enter to analyze...")
+input()
 
-print("\nDescribe your background and skills (press Enter twice when done):")
-lines = []
-while True:
-    line = input()
-    if line == "" and lines and lines[-1] == "":
-        break
-    lines.append(line)
-background = "\n".join(lines[:-1])
+with open("job.txt", "r", encoding="utf-8") as f:
+    job_description = f.read()
 
 print("\nAnalyzing...\n")
-result = analyze(job_description, background)
+result = analyze(job_description, BACKGROUND)
 print(result)
