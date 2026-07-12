@@ -1,0 +1,22 @@
+name: Build and Test Docker Image
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t app-review .
+
+      - name: Test API starts
+        run: |
+          docker run -d -p 8000:8000 -e ANTHROPIC_API_KEY=test app-review
+          sleep 5
+          curl -f http://localhost:8000/ || exit 1
