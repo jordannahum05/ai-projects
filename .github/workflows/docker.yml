@@ -1,11 +1,11 @@
-name: Build and Test Docker Image
+name: Build and Deploy
 
 on:
   push:
     branches: [main]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,8 +15,15 @@ jobs:
       - name: Build Docker image
         run: docker build -t app-review .
 
-      - name: Test API starts
-        run: |
-          docker run -d -p 8000:8000 -e ANTHROPIC_API_KEY=test app-review
-          sleep 5
-          curl -f http://localhost:8000/ || exit 1
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd ai-projects
+            git pull
+            sudo docker build -t app-review .
+            sudo docker stop $(sudo docker ps -q) || true
+            sudo docker run -d -p 80:8000 -e ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} app-review
