@@ -1,71 +1,75 @@
 # AI Engineering Projects
 
-A collection of AI-powered applications built with Python, Claude (Anthropic), and modern LLM tooling.
+A collection of AI-powered applications built with Python, FastAPI, Claude (Anthropic), Docker, and AWS.
 
-**Live API:** [https://web-production-eb10d.up.railway.app](https://web-production-eb10d.up.railway.app) | [API Docs](https://web-production-eb10d.up.railway.app/docs)
-
----
-
-## Projects
-
-### 1. Document Q&A (`doc_qa.py`)
-Upload any PDF and ask questions about it in natural language.
-
-- Reads and chunks PDF documents
-- Creates semantic embeddings using `sentence-transformers`
-- Stores and searches chunks in ChromaDB (vector database)
-- Answers questions using Claude — grounded in the document, no hallucination
-
-**Run it:**
-```bash
-python doc_qa.py
-```
+**Live API:** [http://3.144.240.181](http://3.144.240.181) | [API Docs](http://3.144.240.181/docs)
 
 ---
 
-### 2. Job Application Analyzer (`job_analyzer.py`)
-Paste a job description and your background — get a match score, skill gaps, and a cover letter.
+## API Endpoints
 
-- Analyzes fit between candidate and role
-- Identifies top strengths and missing skills
-- Generates a tailored cover letter using Claude
+Deployed on AWS EC2 via Docker. Auto-deploys on every push using GitHub Actions.
 
-**Run it:**
+### `POST /chat`
+Chat with Claude.
 ```bash
-python job_analyzer.py
+curl -X POST http://3.144.240.181/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "hello"}'
 ```
+
+### `POST /ask-pdf`
+Upload a PDF and ask questions about it (RAG).
+```bash
+curl -X POST http://3.144.240.181/ask-pdf \
+  -F "file=@document.pdf" \
+  -F "question=What is this document about?"
+```
+
+### `GET /history`
+Get the last 10 chat messages from the database.
 
 ---
 
-### 3. AI Agent (`agent.py`)
-An autonomous agent that uses tool calling to complete multi-step tasks.
+## Other Projects
 
-- Claude decides which tools to call and in what order
-- Searches for jobs and retrieves details without being told how
-- Demonstrates the full agent loop: reason → call tool → observe → continue
+### Document Q&A (`doc_qa.py`)
+Command-line version with ChromaDB vector search and sentence-transformers embeddings.
 
-**Run it:**
-```bash
-python agent.py
-```
+### Job Application Analyzer (`job_analyzer.py`)
+Paste a job description — get a match score, skill gaps, and a tailored cover letter.
+
+### AI Agent (`agent.py`)
+Autonomous agent using Claude tool calling to complete multi-step tasks.
 
 ---
 
 ## Stack
 
-- Python
-- [Anthropic SDK](https://github.com/anthropics/anthropic-sdk-python) (Claude API)
-- ChromaDB
-- sentence-transformers
-- pypdf
+- Python, FastAPI, SQLAlchemy, pypdf
+- Anthropic SDK (Claude API)
+- Docker
+- AWS EC2
+- GitHub Actions (CI/CD)
 
 ## Setup
 
 ```bash
-pip install anthropic chromadb sentence-transformers pypdf python-dotenv fpdf2
+pip install -r requirements.txt
 ```
 
 Create a `.env` file:
 ```
 ANTHROPIC_API_KEY=your_key_here
+```
+
+Run locally:
+```bash
+uvicorn api:app --reload
+```
+
+Run with Docker:
+```bash
+docker build -t app-review .
+docker run -p 8000:8000 --env-file .env app-review
 ```
