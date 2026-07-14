@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from pypdf import PdfReader
+import io
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -56,6 +58,23 @@ def chat(request: ChatRequest):
     session.close()
 
     return {"response": ai_response}
+
+@app.post("/ask-pdf")
+async def ask_pdf(file: UploadFile = File(...), question: str = Form(...)):
+    contents = await file.read()
+    reader = PdfReader(io.BytesIO(contents))
+    text = "\n\n".join(page.extract_text() for page in reader.pages if page.extract_text())
+    if not text:
+        return {"error": "Could not extract text from PDF"}
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1000,
+        messages=[{
+            "role": "user",
+            "content": f"Answer the question based only on the document below. If the answer is not in the document, say so.\n\nDocument:\n{text[:20000]}\n\nQuestion: {question}"
+        }]
+    )
+    return {"answer": response.content[0].text}
 
 @app.get("/history")
 def history():
