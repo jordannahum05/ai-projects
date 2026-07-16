@@ -26,4 +26,4 @@ jobs:
             git pull
             sudo docker build -t app-review .
             sudo docker stop $(sudo docker ps -q) || true
-            sudo docker run -d -p 80:8000 -e ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} app-review
+            sudo docker run -d -p 80:8000 -e ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} -e DATABASE_URL=${{ secrets.DATABASE_URL }} app-review
