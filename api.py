@@ -23,7 +23,7 @@ app.add_middleware(
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 # database setup
-engine = create_engine("sqlite:///chat_history.db")
+engine = create_engine(os.getenv("DATABASE_URL", "sqlite:///chat_history.db"))
 Base = declarative_base()
 Session = sessionmaker(bind=engine)
 
