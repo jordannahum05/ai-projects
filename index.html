@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Chat</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 700px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 12px;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f97316;
+      text-align: center;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 8px 0;
+    }
+
+    .message {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .user {
+      background: #f97316;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .ai {
+      background: #1e1e1e;
+      color: #f0f0f0;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      border: 1px solid #2a2a2a;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid #2a2a2a;
+      background: #1e1e1e;
+      color: #f0f0f0;
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #f97316;
+    }
+
+    button {
+      padding: 12px 20px;
+      background: #f97316;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AI Chat</h1>
+    <div id="messages"></div>
+    <div class="input-row">
+      <input id="input" type="text" placeholder="Type a message..." />
+      <button id="send">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const API = "http://18.227.36.210"
+    const messages = document.getElementById("messages")
+    const input = document.getElementById("input")
+    const btn = document.getElementById("send")
+
+    function addMessage(text, role) {
+      const div = document.createElement("div")
+      div.className = "message " + role
+      div.textContent = text
+      messages.appendChild(div)
+      messages.scrollTop = messages.scrollHeight
+    }
+
+    async function send() {
+      const text = input.value.trim()
+      if (!text) return
+
+      input.value = ""
+      btn.disabled = true
+      addMessage(text, "user")
+      addMessage("Thinking...", "ai")
+
+      try {
+        const res = await fetch(API + "/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
+        })
+        const data = await res.json()
+        messages.lastChild.textContent = data.response
+      } catch {
+        messages.lastChild.textContent = "Error — is the API running?"
+      }
+
+      btn.disabled = false
+      input.focus()
+    }
+
+    btn.addEventListener("click", send)
+    input.addEventListener("keydown", e => { if (e.key === "Enter") send() })
+  </script>
+</body>
+</html>
