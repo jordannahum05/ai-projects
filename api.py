@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, Request
+from fastapi import FastAPI, UploadFile, File, Form, Request, Header, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pypdf import PdfReader
@@ -19,8 +19,14 @@ from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
 
+API_KEY = os.getenv("API_KEY")
+
+def verify_key(x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
 limiter = Limiter(key_func=get_remote_address)
-app = FastAPI()
+app = FastAPI(dependencies=[Depends(verify_key)])
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
