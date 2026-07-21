@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pypdf import PdfReader
@@ -13,10 +13,16 @@ import os
 import json
 import psycopg2
 from psycopg2.extras import execute_values
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -47,23 +53,25 @@ def home():
     return {"message": "API is running"}
 
 @app.post("/chat")
-def chat(request: ChatRequest):
+@limiter.limit("20/minute")
+def chat(request: Request, body: ChatRequest):
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
         max_tokens=500,
-        messages=[{"role": "user", "content": request.message}]
+        messages=[{"role": "user", "content": body.message}]
     )
     ai_response = response.content[0].text
 
     session = Session()
-    session.add(Message(user_message=request.message, ai_response=ai_response))
+    session.add(Message(user_message=body.message, ai_response=ai_response))
     session.commit()
     session.close()
 
     return {"response": ai_response}
 
 @app.post("/ask-pdf")
-async def ask_pdf(file: UploadFile = File(...), question: str = Form(...)):
+@limiter.limit("10/minute")
+async def ask_pdf(request: Request, file: UploadFile = File(...), question: str = Form(...)):
     contents = await file.read()
     reader = PdfReader(io.BytesIO(contents))
     text = "\n\n".join(page.extract_text() for page in reader.pages if page.extract_text())
@@ -97,7 +105,8 @@ def chunk_text(text: str, size: int = 500) -> list[str]:
     return chunks
 
 @app.post("/upload")
-async def upload(file: UploadFile = File(...)):
+@limiter.limit("10/minute")
+async def upload(request: Request, file: UploadFile = File(...)):
     contents = await file.read()
     reader = PdfReader(io.BytesIO(contents))
     text = "\n\n".join(page.extract_text() for page in reader.pages if page.extract_text())
@@ -121,8 +130,9 @@ class RAGRequest(BaseModel):
     question: str
 
 @app.post("/rag-ask")
-def rag_ask(request: RAGRequest):
-    q_embedding = embed(request.question)
+@limiter.limit("20/minute")
+def rag_ask(request: Request, body: RAGRequest):
+    q_embedding = embed(body.question)
     db = get_db()
     cur = db.cursor()
     cur.execute(
@@ -141,7 +151,7 @@ def rag_ask(request: RAGRequest):
         max_tokens=1000,
         messages=[{
             "role": "user",
-            "content": f"Answer the question based only on the context below.\n\nContext:\n{context}\n\nQuestion: {request.question}"
+            "content": f"Answer the question based only on the context below.\n\nContext:\n{context}\n\nQuestion: {body.question}"
         }]
     )
     return {"answer": response.content[0].text, "source": source}
