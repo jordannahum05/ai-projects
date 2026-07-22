@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 const API = "http://18.227.36.210";
-const API_KEY = "somesecretrandomstring123";
+const API_KEY = process.env.REACT_APP_API_KEY || "somesecretrandomstring123";
 
 function ChatTab() {
   const [messages, setMessages] = useState([]);
